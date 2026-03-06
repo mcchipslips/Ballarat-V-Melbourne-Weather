@@ -1,0 +1,38 @@
+/* ── Dark dropdown for year filters ── */
+.dark-dropdown .Select-control {
+    background-color: #1A1A1A !important;
+    border: 1px solid #888888 !important;
+}
+.dark-dropdown .Select-value-label,
+.dark-dropdown .Select-single-value {
+    color: #E0E0E0 !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+}
+.dark-dropdown .Select-placeholder {
+    color: #999999 !important;
+}
+.dark-dropdown input {
+    color: #FFFFFF !important;
+}
+.dark-dropdown .Select-arrow {
+    border-top-color: #FFFFFF !important;
+}
+.dark-dropdown .Select-menu-outer {
+    background-color: #1A1A1A !important;
+    border: 1px solid #888888 !important;
+    z-index: 9999 !important;
+}
+.dark-dropdown .Select-option {
+    background-color: #1A1A1A !important;
+    color: #FFFFFF !important;
+}
+.dark-dropdown .Select-option.is-focused {
+    background-color: #333333 !important;
+    color: #D4A853 !important;
+}
+.dark-dropdown .Select-option.is-selected {
+    background-color: #2A2A2A !important;
+    color: #D4A853 !important;
+    font-weight: bold !important;
+}
