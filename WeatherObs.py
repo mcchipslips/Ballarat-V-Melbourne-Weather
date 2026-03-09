@@ -38,22 +38,21 @@ os.makedirs(CACHE_DIR, exist_ok=True)
 # ─────────────────────────────────────────────────────────────────────────────
 # COLOURS
 # ─────────────────────────────────────────────────────────────────────────────
-BG        = "#1A1A1A"       # deep charcoal
-CARD      = "#242424"       # slightly lighter charcoal
-ACCENT    = "#D4A853"       # warm gold — Ballarat
-ACCENT2   = "#7EB8C9"       # steel blue — Melbourne
-TEXT_MAIN = "#F0EAD6"       # warm off-white
-TEXT_DIM  = "#8A8070"       # muted warm grey
-C_DAY     = "#D4A853"       # gold for daytime
-C_NIGHT   = "#4A5568"       # slate for nighttime
-C_RAIN    = "#7EB8C9"       # muted sky blue
-C_WIND    = "#C4956A"       # warm bronze
+BG        = "#1A1A1A"
+CARD      = "#242424"
+ACCENT    = "#D4A853"
+ACCENT2   = "#7EB8C9"
+TEXT_MAIN = "#F0EAD6"
+TEXT_DIM  = "#8A8070"
+C_DAY     = "#D4A853"
+C_NIGHT   = "#4A5568"
+C_RAIN    = "#7EB8C9"
+C_WIND    = "#C4956A"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # DATA FETCHER
 # ─────────────────────────────────────────────────────────────────────────────
 def fetch_hourly(lat, lon, label, start=START_DATE, end=END_DATE):
-    """Fetch hourly weather from Open-Meteo and cache as CSV."""
     cache_path = os.path.join(CACHE_DIR, f"{label}_hourly.csv")
     if os.path.exists(cache_path):
         print(f"  Loading {label} from cache...")
@@ -71,7 +70,7 @@ def fetch_hourly(lat, lon, label, start=START_DATE, end=END_DATE):
             "precipitation",
             "windspeed_10m",
             "windgusts_10m",
-            "is_day",           # 1 = daytime, 0 = nighttime (based on sunrise/sunset)
+            "is_day",
         ]),
         "daily": ",".join([
             "temperature_2m_max",
@@ -82,12 +81,11 @@ def fetch_hourly(lat, lon, label, start=START_DATE, end=END_DATE):
             "sunrise",
             "sunset",
         ]),
-        "timezone":         "Australia/Melbourne",
-        "wind_speed_unit":  "kmh",
-        "precipitation_unit": "mm",
+        "timezone":             "Australia/Melbourne",
+        "wind_speed_unit":      "kmh",
+        "precipitation_unit":   "mm",
     }
 
-    # Fetch in 5-year chunks to avoid timeout
     all_hourly = []
     all_daily  = []
     years = list(range(int(start[:4]), int(end[:4]) + 1, 5))
@@ -129,12 +127,11 @@ def fetch_hourly(lat, lon, label, start=START_DATE, end=END_DATE):
         d["time"] = pd.to_datetime(d["time"])
         all_daily.append(d)
         print(f"    ✓ {chunk_start} → {chunk_end}")
-        time.sleep(8)  # be polite to the API — avoid rate limiting
+        time.sleep(8)
 
     hourly = pd.concat(all_hourly, ignore_index=True).drop_duplicates("time")
     daily  = pd.concat(all_daily,  ignore_index=True).drop_duplicates("time")
 
-    # Save both
     hourly.to_csv(cache_path, index=False)
     daily.to_csv(os.path.join(CACHE_DIR, f"{label}_daily.csv"), index=False)
     print(f"  ✓ {label} saved to cache.")
@@ -147,18 +144,11 @@ def load_daily(label):
 
 
 def build_daytime_nighttime(hourly_df):
-    """
-    From hourly data split by is_day flag, compute daily:
-      - daytime max/min temp (is_day == 1)
-      - nighttime max/min temp (is_day == 0)
-    """
     hourly_df["date"] = hourly_df["time"].dt.date
-
     day   = hourly_df[hourly_df["is_day"] == 1].groupby("date")["temperature_2m"].agg(
         day_max="max", day_min="min").reset_index()
     night = hourly_df[hourly_df["is_day"] == 0].groupby("date")["temperature_2m"].agg(
         night_max="max", night_min="min").reset_index()
-
     merged = day.merge(night, on="date", how="outer")
     merged["date"] = pd.to_datetime(merged["date"])
     return merged
@@ -180,7 +170,6 @@ mel_daily  = load_daily("melbourne")
 bal_dn = build_daytime_nighttime(bal_hourly)
 mel_dn = build_daytime_nighttime(mel_hourly)
 
-# Add year/month columns
 for df in [bal_daily, mel_daily]:
     df["year"]  = df["time"].dt.year
     df["month"] = df["time"].dt.month
@@ -189,7 +178,6 @@ for df in [bal_dn, mel_dn]:
     df["year"]  = df["date"].dt.year
     df["month"] = df["date"].dt.month
 
-# Monthly averages — daytime/nighttime
 def monthly_avg_dn(dn_df):
     return dn_df.groupby("month").agg(
         day_max=("day_max", "mean"),
@@ -203,7 +191,6 @@ mel_monthly_dn = monthly_avg_dn(mel_dn)
 
 MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
 
-# Rainfall stats
 def rainfall_stats(daily_df):
     daily_df = daily_df.copy()
     daily_df["rain_day"] = (daily_df["precipitation_sum"] > 0.2).astype(int)
@@ -238,7 +225,6 @@ def axis(title="", **kwargs):
 
 LABEL_STYLE = {"fontSize": "0.7rem", "color": TEXT_DIM, "textTransform": "uppercase",
                "letterSpacing": "0.1em", "marginBottom": "6px", "display": "block"}
-dd_style = {"backgroundColor": "#111111", "color": "#FFFFFF", "border": "1px solid #888888", "borderRadius": "8px", "fontFamily": "Georgia, serif", "fontWeight": "bold"}
 
 def kpi_card(title, value, subtitle="", color=ACCENT):
     return html.Div([
@@ -256,7 +242,6 @@ def kpi_card(title, value, subtitle="", color=ACCENT):
 # ─────────────────────────────────────────────────────────────────────────────
 app = dash.Dash(__name__, title="Ballarat vs Melbourne Weather")
 
-# Force Dash dropdown internals to use dark background + white text
 app.index_string = """<!DOCTYPE html>
 <html>
 <head>
@@ -265,16 +250,15 @@ app.index_string = """<!DOCTYPE html>
 {%favicon%}
 {%css%}
 <style>
-  /* ── Dash Dropdown: dark background, white text ── */
   .Select-control,
   .Select--single > .Select-control,
   .Select--multi > .Select-control {
     background-color: #1A1A1A !important;
     border: 1px solid #888888 !important;
-    color: #FFFFFF !important;
+    color: #B0B0B0 !important;
   }
   .Select-value, .Select-value-label {
-    color: #FFFFFF !important;
+    color: #B0B0B0 !important;
     background-color: #1A1A1A !important;
   }
   .Select-placeholder {
@@ -282,11 +266,11 @@ app.index_string = """<!DOCTYPE html>
     background-color: #1A1A1A !important;
   }
   .Select-input, .Select-input > input {
-    color: #FFFFFF !important;
+    color: #B0B0B0 !important;
     background-color: #1A1A1A !important;
   }
   .Select-arrow-zone .Select-arrow {
-    border-top-color: #FFFFFF !important;
+    border-top-color: #B0B0B0 !important;
   }
   .Select-menu-outer {
     background-color: #1A1A1A !important;
@@ -298,7 +282,7 @@ app.index_string = """<!DOCTYPE html>
   }
   .Select-option {
     background-color: #1A1A1A !important;
-    color: #FFFFFF !important;
+    color: #B0B0B0 !important;
   }
   .Select-option.is-focused {
     background-color: #333333 !important;
@@ -309,11 +293,10 @@ app.index_string = """<!DOCTYPE html>
     color: #D4A853 !important;
     font-weight: bold !important;
   }
-  /* Newer Dash uses dash-dropdown class */
   .dash-dropdown .Select-control { background-color: #1A1A1A !important; }
-  .dash-dropdown .Select-value-label { color: #FFFFFF !important; }
+  .dash-dropdown .Select-value-label { color: #B0B0B0 !important; }
   .dash-dropdown .Select-menu-outer { background-color: #1A1A1A !important; }
-  .dash-dropdown .Select-option { color: #FFFFFF !important; background-color: #1A1A1A !important; }
+  .dash-dropdown .Select-option { color: #B0B0B0 !important; background-color: #1A1A1A !important; }
   .dash-dropdown .Select-option.is-focused { color: #D4A853 !important; background-color: #333333 !important; }
 </style>
 </head>
@@ -326,6 +309,7 @@ app.index_string = """<!DOCTYPE html>
 </footer>
 </body>
 </html>"""
+
 server = app.server
 app.config.suppress_callback_exceptions = True
 
@@ -369,11 +353,11 @@ app.layout = html.Div([
                 html.Div([
                     html.Div([
                         html.Span("From", style={"fontSize": "0.62rem", "color": TEXT_DIM, "marginBottom": "4px", "display": "block"}),
-                        dcc.Dropdown(id="year-from", options=year_options, value=YEARS[0], clearable=False, className="dark-dropdown"),
+                        dcc.Dropdown(id="year-from", options=year_options, value=YEARS[0], clearable=False, className="dark-dropdown", style={"color": "#B0B0B0"}),
                     ], style={"flex": 1}),
                     html.Div([
                         html.Span("To", style={"fontSize": "0.62rem", "color": TEXT_DIM, "marginBottom": "4px", "display": "block"}),
-                        dcc.Dropdown(id="year-to", options=year_options, value=YEARS[-1], clearable=False, className="dark-dropdown"),
+                        dcc.Dropdown(id="year-to", options=year_options, value=YEARS[-1], clearable=False, className="dark-dropdown",style={"color": "#B0B0B0"}),
                     ], style={"flex": 1}),
                 ], style={"display": "flex", "gap": "8px"}),
             ]),
@@ -414,7 +398,6 @@ app.layout = html.Div([
             ], colors={"border": "#3A3530", "primary": ACCENT, "background": CARD},
             style={"fontFamily": "Georgia, serif", "fontSize": "0.83rem"}),
 
-            # Series toggles — always visible in DOM, only relevant on temp tab
             html.Div(children=[
                 html.Div([
                     html.Span("Show / hide:  ", style={
@@ -471,15 +454,18 @@ def filter_years(df, yf, yt, date_col="time"):
     return df[(df[date_col].dt.year >= yf) & (df[date_col].dt.year <= yt)]
 
 
+# ── FIX: KPI cards now filter on pre-computed 'year' column ──────────────────
 @app.callback(
     Output("kpi-row", "children"),
     Input("year-from", "value"), Input("year-to", "value"),
 )
 def update_kpis(yf, yt):
-    yf, yt = int(yf or YEARS[0]), int(yt or YEARS[-1])
+    yf = int(yf) if yf is not None else YEARS[0]
+    yt = int(yt) if yt is not None else YEARS[-1]
     if yf > yt: yf, yt = yt, yf
-    bd = filter_years(bal_daily, yf, yt)
-    md = filter_years(mel_daily, yf, yt)
+
+    bd = bal_daily[(bal_daily["year"] >= yf) & (bal_daily["year"] <= yt)]
+    md = mel_daily[(mel_daily["year"] >= yf) & (mel_daily["year"] <= yt)]
 
     bal_avg_max = bd["temperature_2m_max"].mean()
     mel_avg_max = md["temperature_2m_max"].mean()
@@ -492,12 +478,12 @@ def update_kpis(yf, yt):
     mel_wind_max = md["windgusts_10m_max"].max()
 
     return [
-        kpi_card("Avg Daily Max — Ballarat", f"{bal_avg_max:.1f}°C", f"{yf}–{yt}", ACCENT),
-        kpi_card("Avg Daily Max — Melbourne", f"{mel_avg_max:.1f}°C", f"{yf}–{yt}", ACCENT2),
-        kpi_card("Mel warmer by (avg max)", f"{diff:+.1f}°C", "The 3°C test", C_DAY),
-        kpi_card("Total Rainfall — Ballarat", f"{bal_rain_total:,.0f}mm", f"{yf}–{yt}", C_RAIN),
-        kpi_card("Total Rainfall — Melbourne", f"{mel_rain_total:,.0f}mm", f"{yf}–{yt}", C_RAIN),
-        kpi_card("Peak Wind Gust — Ballarat", f"{bal_wind_max:.0f}km/h", f"{yf}–{yt}", C_WIND),
+        kpi_card("Avg Daily Max — Ballarat",    f"{bal_avg_max:.1f}°C",       f"{yf}–{yt}", ACCENT),
+        kpi_card("Avg Daily Max — Melbourne",   f"{mel_avg_max:.1f}°C",       f"{yf}–{yt}", ACCENT2),
+        kpi_card("Mel warmer by (avg max)",     f"{diff:+.1f}°C",             "The 3°C test", C_DAY),
+        kpi_card("Total Rainfall — Ballarat",   f"{bal_rain_total:,.0f}mm",   f"{yf}–{yt}", C_RAIN),
+        kpi_card("Total Rainfall — Melbourne",  f"{mel_rain_total:,.0f}mm",   f"{yf}–{yt}", C_RAIN),
+        kpi_card("Peak Wind Gust — Ballarat",   f"{bal_wind_max:.0f}km/h",    f"{yf}–{yt}", C_WIND),
     ]
 
 
@@ -580,7 +566,6 @@ def render_tab(tab, yf, yt, temp_series):
         fig = go.Figure()
         roll = 30
 
-        # Daytime ranges
         fig.add_trace(go.Scatter(
             x=bdn_s["date"],
             y=bdn_s["day_max"].rolling(roll, center=True).mean(),
@@ -591,8 +576,6 @@ def render_tab(tab, yf, yt, temp_series):
             y=mdn_s["day_max"].rolling(roll, center=True).mean(),
             line=dict(color=ACCENT2, width=2), name="Melbourne — Daytime Max", showlegend=True,
         ))
-
-        # Nighttime ranges
         fig.add_trace(go.Scatter(
             x=bdn_s["date"],
             y=bdn_s["night_max"].rolling(roll, center=True).mean(),
@@ -603,8 +586,6 @@ def render_tab(tab, yf, yt, temp_series):
             y=mdn_s["night_max"].rolling(roll, center=True).mean(),
             line=dict(color=ACCENT2, width=1.5, dash="dot"), name="Melbourne — Nighttime Max", showlegend=True,
         ))
-
-
 
         fig.update_layout(
             **PLOT_BASE,
@@ -628,7 +609,6 @@ def render_tab(tab, yf, yt, temp_series):
 
     # ── RAINFALL ─────────────────────────────────────────────────────────────
     elif tab == "rain":
-        # Annual rainfall totals
         bal_annual = bd.groupby("year")["precipitation_sum"].sum().reset_index()
         mel_annual = md.groupby("year")["precipitation_sum"].sum().reset_index()
 
@@ -637,7 +617,6 @@ def render_tab(tab, yf, yt, temp_series):
             name="Ballarat", marker_color=ACCENT, opacity=0.8))
         fig1.add_trace(go.Bar(x=mel_annual["year"], y=mel_annual["precipitation_sum"],
             name="Melbourne", marker_color=ACCENT2, opacity=0.8))
-        # Trend lines
         for df, color in [(bal_annual, ACCENT), (mel_annual, ACCENT2)]:
             z = np.polyfit(df["year"], df["precipitation_sum"], 1)
             p = np.poly1d(z)
@@ -652,7 +631,6 @@ def render_tab(tab, yf, yt, temp_series):
             barmode="group", height=380, margin=dict(l=60, r=40, t=60, b=50),
         )
 
-        # Monthly rain frequency
         fig2 = go.Figure()
         fig2.add_trace(go.Bar(x=MONTH_LABELS, y=bal_rain["rain_days_pct"],
             name="Ballarat — Rain Days %", marker_color=ACCENT, opacity=0.8))
@@ -666,7 +644,6 @@ def render_tab(tab, yf, yt, temp_series):
             barmode="group", height=340, margin=dict(l=60, r=40, t=60, b=50),
         )
 
-        # Monthly avg rainfall volume
         fig3 = go.Figure()
         fig3.add_trace(go.Bar(x=MONTH_LABELS, y=bal_rain["avg_rain_mm"],
             name="Ballarat — Avg Daily (mm)", marker_color=ACCENT, opacity=0.8))
@@ -693,7 +670,6 @@ def render_tab(tab, yf, yt, temp_series):
         bd_s = bd.sort_values("time")
         md_s = md.sort_values("time")
 
-        # Daily max wind gust over time
         fig1 = go.Figure()
         fig1.add_trace(go.Scatter(
             x=bd_s["time"], y=bd_s["windgusts_10m_max"].rolling(30, center=True).mean(),
@@ -703,7 +679,6 @@ def render_tab(tab, yf, yt, temp_series):
             x=md_s["time"], y=md_s["windgusts_10m_max"].rolling(30, center=True).mean(),
             name="Melbourne — Max Gust (30d avg)", line=dict(color=ACCENT2, width=1.5),
         ))
-        # Raw daily as faint dots
         fig1.add_trace(go.Scatter(
             x=bd_s["time"], y=bd_s["windgusts_10m_max"],
             mode="markers", marker=dict(color=ACCENT, size=2, opacity=0.2),
@@ -722,7 +697,6 @@ def render_tab(tab, yf, yt, temp_series):
             height=420, margin=dict(l=60, r=40, t=60, b=50),
         )
 
-        # Monthly avg max wind
         bal_wind_monthly = bd.groupby("month")["windgusts_10m_max"].mean().reset_index()
         mel_wind_monthly = md.groupby("month")["windgusts_10m_max"].mean().reset_index()
 
@@ -739,7 +713,6 @@ def render_tab(tab, yf, yt, temp_series):
             barmode="group", height=340, margin=dict(l=60, r=40, t=60, b=50),
         )
 
-        # Wind speed distribution (histogram)
         fig3 = go.Figure()
         fig3.add_trace(go.Histogram(x=bd["windgusts_10m_max"], name="Ballarat",
             marker_color=ACCENT, opacity=0.7, nbinsx=40, histnorm="percent"))
@@ -765,14 +738,12 @@ def render_tab(tab, yf, yt, temp_series):
     elif tab == "monthly":
         fig = go.Figure()
 
-        # Daytime averages
         fig.add_trace(go.Scatter(x=MONTH_LABELS, y=bal_monthly_dn["day_max"],
             name="Ballarat — Avg Day Max", line=dict(color=ACCENT, width=2.5),
             mode="lines+markers", marker=dict(size=7)))
         fig.add_trace(go.Scatter(x=MONTH_LABELS, y=mel_monthly_dn["day_max"],
             name="Melbourne — Avg Day Max", line=dict(color=ACCENT2, width=2.5),
             mode="lines+markers", marker=dict(size=7)))
-
 
         fig.update_layout(
             **PLOT_BASE,
@@ -782,7 +753,6 @@ def render_tab(tab, yf, yt, temp_series):
             height=460, margin=dict(l=60, r=40, t=60, b=50),
         )
 
-        # Table summary
         table_data = pd.DataFrame({
             "Month": MONTH_LABELS,
             "Bal Day Max": bal_monthly_dn["day_max"].round(1),
@@ -814,7 +784,6 @@ def render_tab(tab, yf, yt, temp_series):
 
     # ── THE 3°C TEST ─────────────────────────────────────────────────────────
     elif tab == "test":
-        # Daily temperature difference (Melbourne max minus Ballarat max)
         bd_m = bd[["time","temperature_2m_max","temperature_2m_min"]].copy()
         md_m = md[["time","temperature_2m_max","temperature_2m_min"]].copy()
         merged = bd_m.merge(md_m, on="time", suffixes=("_bal","_mel"))
@@ -831,7 +800,6 @@ def render_tab(tab, yf, yt, temp_series):
             x=merged["time"], y=merged["diff_max"].rolling(30, center=True).mean(),
             name="Daily Max Diff (30d avg)", line=dict(color=C_DAY, width=2),
         ))
-
         fig1.add_hline(y=3, line_dash="dot", line_color=ACCENT2, opacity=0.7,
                        annotation_text="3°C idiom", annotation_font_color=ACCENT2)
         fig1.add_hline(y=0, line_dash="dot", line_color=TEXT_DIM, opacity=0.4)
@@ -862,18 +830,49 @@ def render_tab(tab, yf, yt, temp_series):
         # Monthly avg diff
         merged["month"] = merged["time"].dt.month
         monthly_diff = merged.groupby("month")["diff_max"].mean().reset_index()
+
         fig3 = go.Figure()
-        fig3.add_trace(go.Bar(x=MONTH_LABELS, y=monthly_diff["diff_max"],
+        fig3.add_trace(go.Bar(
+            x=MONTH_LABELS,
+            y=monthly_diff["diff_max"],
             marker_color=[ACCENT2 if v > 3 else ACCENT for v in monthly_diff["diff_max"]],
             name="Avg Max Diff by Month",
-            text=[f"{v:.1f}°" for v in monthly_diff["diff_max"]], textposition="outside"))
+            text=[f"{v:.1f}°" for v in monthly_diff["diff_max"]],
+            textposition="outside",
+            showlegend=False,
+        ))
         fig3.add_hline(y=3, line_dash="dot", line_color=ACCENT2, opacity=0.7)
+
+        # Dummy scatter traces for colour legend
+        fig3.add_trace(go.Scatter(
+            x=[None], y=[None], mode="markers",
+            marker=dict(color=ACCENT2, size=12, symbol="square"),
+            name="> 3°C warmer — claim holds",
+        ))
+        fig3.add_trace(go.Scatter(
+            x=[None], y=[None], mode="markers",
+            marker=dict(color=ACCENT, size=12, symbol="square"),
+            name="≤ 3°C warmer — below claim",
+        ))
+
         fig3.update_layout(
             **PLOT_BASE,
-            title=dict(text="Average Daily Max Difference by Month (orange = > 3°C)",
+            title=dict(text="Average Daily Max Difference by Month (Melbourne − Ballarat)",
                        font=dict(size=14, color=TEXT_MAIN)),
-            xaxis=axis("Month"), yaxis=axis("°C difference (Mel − Bal)"),
-            height=340, margin=dict(l=60, r=40, t=60, b=50), showlegend=False,
+            xaxis=axis("Month"),
+            yaxis=axis("°C difference (Mel − Bal)"),
+            height=360,
+            margin=dict(l=60, r=40, t=60, b=50),
+            showlegend=True,
+            legend=dict(
+                bgcolor="rgba(0,0,0,0)",
+                font=dict(color=TEXT_DIM, size=11),
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1,
+            ),
         )
 
         # Verdict card
@@ -889,7 +888,6 @@ def render_tab(tab, yf, yt, temp_series):
             html.P(verdict_text, style={"color": TEXT_MAIN, "fontSize": "0.85rem", "margin": "0 0 10px 0"}),
             html.Ul([
                 html.Li(f"Mean daily max difference: {avg_diff_max:.2f}°C"),
-
                 html.Li(f"Days where Melbourne is > 3°C warmer: {pct_above_3:.1f}%"),
                 html.Li(f"Days where Ballarat is actually warmer: {pct_below_0:.1f}%"),
                 html.Li("The gap is largest in spring/summer and smallest in winter."),
@@ -906,7 +904,6 @@ def render_tab(tab, yf, yt, temp_series):
                 html.Div(dcc.Graph(figure=fig3, config={"displayModeBar": False}), style={"flex": 1}),
             ], style={"display": "flex", "gap": "12px"}),
         ])
-
 
     # ── DEFINITIONS ──────────────────────────────────────────────────────────
     elif tab == "defs":
@@ -1061,11 +1058,11 @@ def render_tab(tab, yf, yt, temp_series):
                  "Melbourne's. More common than most people expect, particularly in autumn and winter."),
                 ("Monthly avg diff bars",
                  "Mean Melbourne-minus-Ballarat daily max difference by calendar month. "
-                 "Blue bars exceed 3°C; gold bars are below it."),
+                 "Blue bars (> 3°C) indicate months where the 3°C claim holds. "
+                 "Gold bars (≤ 3°C) indicate months where the gap is smaller than the claim suggests."),
             ], color=ACCENT2),
 
         ], style={"maxWidth": "900px", "paddingBottom": "20px"})
-
 
     return html.Div("Select a tab.")
 

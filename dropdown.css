@@ -5,7 +5,7 @@
 }
 .dark-dropdown .Select-value-label,
 .dark-dropdown .Select-single-value {
-    color: #E0E0E0 !important;
+    color: #B0B0B0 !important;        /* was #E0E0E0 */
     font-size: 1rem !important;
     font-weight: 600 !important;
 }
@@ -13,10 +13,10 @@
     color: #999999 !important;
 }
 .dark-dropdown input {
-    color: #FFFFFF !important;
+    color: #B0B0B0 !important;        /* was #FFFFFF */
 }
 .dark-dropdown .Select-arrow {
-    border-top-color: #FFFFFF !important;
+    border-top-color: #B0B0B0 !important;  /* was #FFFFFF */
 }
 .dark-dropdown .Select-menu-outer {
     background-color: #1A1A1A !important;
@@ -25,7 +25,7 @@
 }
 .dark-dropdown .Select-option {
     background-color: #1A1A1A !important;
-    color: #FFFFFF !important;
+    color: #B0B0B0 !important;        /* was #FFFFFF */
 }
 .dark-dropdown .Select-option.is-focused {
     background-color: #333333 !important;
@@ -35,4 +35,26 @@
     background-color: #2A2A2A !important;
     color: #D4A853 !important;
     font-weight: bold !important;
+}
+/* Newer Dash dropdown class names for selected value */
+.dark-dropdown .Select--single > .Select-control .Select-value .Select-value-label {
+    color: #B0B0B0 !important;
+}
+.dark-dropdown .VirtualizedSelectOption {
+    color: #B0B0B0 !important;
+    background-color: #1A1A1A !important;
+}
+.dark-dropdown .VirtualizedSelectFocusedOption {
+    color: #D4A853 !important;
+    background-color: #333333 !important;
+}
+/* Catch-all for any remaining gold text inside the dropdown */
+.dark-dropdown * {
+    color: #B0B0B0 !important;
+}
+/* Re-apply gold only to focused/selected options */
+.dark-dropdown .Select-option.is-focused,
+.dark-dropdown .Select-option.is-selected,
+.dark-dropdown .VirtualizedSelectFocusedOption {
+    color: #D4A853 !important;
 }
