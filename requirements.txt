@@ -1,1 +1,6 @@
+dash
+plotly
+pandas
+numpy
+requests
 gunicorn
