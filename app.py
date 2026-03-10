@@ -856,14 +856,16 @@ def render_tab(tab, yf, yt, temp_series):
         ))
 
         fig3.update_layout(
-            **PLOT_BASE,
-            title=dict(text="Average Daily Max Difference by Month (Melbourne − Ballarat)",
-                       font=dict(size=14, color=TEXT_MAIN)),
-            xaxis=axis("Month"),
-            yaxis=axis("°C difference (Mel − Bal)"),
-            height=360,
-            margin=dict(l=60, r=40, t=60, b=50),
-            showlegend=True,
+    **PLOT_BASE,
+    title=dict(text="Average Daily Max Difference by Month (Melbourne − Ballarat)",
+               font=dict(size=14, color=TEXT_MAIN)),
+    xaxis=axis("Month"),
+    yaxis=axis("°C difference (Mel − Bal)"),
+    height=360,
+    margin=dict(l=60, r=40, t=60, b=50),
+    showlegend=True,
+)
+        fig3.update_layout(
             legend=dict(
                 bgcolor="rgba(0,0,0,0)",
                 font=dict(color=TEXT_DIM, size=11),
@@ -1071,4 +1073,4 @@ if __name__ == "__main__":
     print("\n" + "═"*60)
     print("  Open: http://127.0.0.1:8050")
     print("═"*60 + "\n")
-    app.run(debug=False)
+    app.run(debug=True)
