@@ -217,6 +217,10 @@ PLOT_BASE = dict(
     font=dict(family="Georgia, serif", color=TEXT_MAIN, size=13),
     legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(color=TEXT_DIM)),
     hovermode="x unified",
+    hoverlabel=dict(
+        namelength=-1,
+        font=dict(family="Georgia, serif", size=12),
+    ),
 )
 
 def axis(title="", **kwargs):
